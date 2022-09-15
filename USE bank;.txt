@@ -1,0 +1,259 @@
+USE bank;
+
+SELECT * FROM bank.account;
+-- it is a good practice to use the database name as a prefix to the table
+SELECT * FROM bank.card;
+-- with semicolon ; you end the statement
+SELECT * FROM bank.disp;
+-- 'don't limit' on top, gives all rows at display
+-- just to see the table -like head in python- with limits top of the table
+
+SELECT * FROM bank.order
+WHERE amount > 10000;
+-- this is a numerical condition
+
+SELECT * FROM bank.order
+WHERE k_symbol = 'SIPO';
+-- this is a categorical condition
+
+SELECT account_id, amount, k_symbol FROM bank.order
+WHERE k_symbol = 'SIPO';
+-- just choosing the specific columns 
+
+SELECT account_id AS 'Account', amount, k_symbol AS 'Type of Payment' FROM bank.order
+WHERE (k_symbol = 'SIPO') AND (amount > 1000); 
+-- to give an alias to the column names we use AS to create an alias, sometimes for presentations
+-- using space for column names just for spaces otherwise using underscore is a general practice
+-- where clause with more than one conditions with parantheses, AND, etc set of conditions
+
+SELECT account_id AS 'Account', amount, k_symbol AS 'Type of Payment' FROM bank.order
+WHERE (k_symbol IN ('SIPO','LEASING','UVER')) AND (amount > 1000); 
+-- whereas SIPO or LEASING or UVER you use IN, meaning in this list of possible values
+
+SELECT account_id AS 'Account', amount, k_symbol AS 'Type of Payment' FROM bank.order
+WHERE (k_symbol ='SIPO' OR k_symbol ='LEASING' OR k_symbol ='UVER') AND (amount > 1000); 
+
+SELECT account_id AS 'Account', amount, k_symbol AS 'Type of Payment' FROM bank.order
+WHERE (k_symbol = 'SIPO') AND NOT (amount > 1000); 
+
+SELECT DISTINCT (k_symbol) FROM bank.order;
+
+-- numerics:
+SELECT * FROM bank.loan;
+
+SELECT *, amount - payments AS balance
+FROM bank.loan;
+-- creates an exta column in the output not in the table. calculate values and put in that column
+-- you'd typically create the new column wich is a part of dataframe in pyhton but not in sql 
+
+SELECT *, amount-payments AS balance, ROUND((amount-payments)/1000,2) AS 'balance in thousands'
+FROM bank.loan;
+
+-- from menu -edit then -format then -uppercase makes the commands uppercase
+
+SELECT * FROM bank.account
+LIMIT 10;
+-- gives 10 uppermost rows but order is not defined so the order changes, no guaranteed order 
+
+-- lowest rows with NULL isn't belong to the database, it's just a flaw of the design SQL workbench
+
+SELECT * FROM bank.district;
+
+-- class practice questions answers
+-- 1
+SELECT A2 AS 'district_name', A11 AS 'average_salary' FROM bank.district
+WHERE (A11 > 10000); 
+
+-- 2
+SELECT * From bank.loan Where status = 'B';
+
+-- 3
+select * from bank.card where type = 'junior' limit 10;
+
+-- 4
+SELECT amount - payments AS 'debt', loan_id, account_id From bank.loan
+Where status = 'B';
+
+-- 5
+select a2 as 'district_name', round((a4*(a10/100)),0) as 'urban_population'
+from bank.district;
+
+-- 6
+select a2 as 'district_name', round((a4*(a10/100)),0) as 'urban_population'
+from bank.district where a10<=50;
+
+-- aggreagate 
+-- how many rows there are we would be using COUNT, values in the column 
+
+select count(*) from bank.order;
+
+select count(account_id) from bank.order;
+-- number of fields, values for the column
+
+select count(distinct(k_symbol)) from bank.order;
+
+select avg(amount) from bank.order;
+select max(amount) from bank.order;
+select min(amount) from bank.order;
+
+-- first get the data in to your notebbok, and then make all calculations in your notebook, not in sql.alter
+-- most cases, get the data out of the database, make the calculations locally in your jupyter notebook
+-- exception to the above is if the data is enormous, then aggregating data first would be good
+
+-- functions with categorigals, strings:
+select * from bank.order;
+
+-- creating a new column for categorical values by using concat
+select *, concat(bank_to, '-',  account_to) as 'target account' from bank.order;
+
+select *, concat(bank_to, '-',  account_to) as 'target account' from bank.order;
+
+SELECT k_symbol, left(k_symbol,2), right(k_symbol,2) , 
+concat(left(k_symbol,2),right(k_symbol,2)) AS 'standardized_k_symbol' 
+FROM bank.order;
+-- left and right takes the charachters and creates a column with them
+-- different than python, in sql there is no meaning for indentation or how many lines you put your function on
+
+-- case when
+SELECT * FROM bank.loan LIMIT 10;
+
+-- to communicate the value that isn't explicit, 
+SELECT loan_id, account_id,
+CASE
+WHEN status = 'B' then 'Defaulter - contract finished'
+WHEN status = 'A' then 'Good - contract finished'
+WHEN status = 'C' then 'Good - contract ongoing'
+WHEN status = 'D' then 'In Debt - contract ongoing'
+ELSE 'No status'
+END AS 'Status Description',status AS 'previous status'
+FROM bank.loan;
+
+-- use AS here to make the column name readable
+-- CASE: there'll be some statements afterwards, and it's an indicator 
+-- we don't use CASE that much becase we can use IF in python, 
+-- Ground rule: we don't want to do that much in SQL, Just get the date, do your own manipulations in Python so go to python
+
+-- ACTIVITY 2 --
+-- 1 
+SELECT * FROM bank.card
+where (type= 'Junior' AND left(issued,2) = 98);
+-- 2
+SELECT * FROM bank.trans
+where type = 'VYDAJ' AND NOT operation = 'VYBER'
+limit 10;
+-- 3
+SELECT amount - payments AS 'debt', loan_id, account_id From bank.loan
+where status = 'b' and amount - payments >1000
+order by amount desc;
+-- 4
+select max(amount) as 'max_transaction',  min(amount) as 'min_transaction' from bank.trans
+where amount > 0;
+-- 5
+
+select *, Substr(date, 1,2) as 'opening year'
+from bank.account;
+
+select *, Substr(date, 3,2) as 'opening month'
+from bank.account;
+
+select date from bank.account;
+
+select *, convert(date,DATE) from bank.account;
+
+select *, convert(left(issued,6),DATE) as 'issued date' from bank.card;
+
+select *, date_format(convert(left(issued,6),DATE), '%d %M %Y') as 'issued date' from bank.card;
+-- date_format function , you can find different format options to show date
+select *, date_format(convert(left(issued,6),DATE), '%d-%m-%y') as 'issued date' from bank.card;
+
+
+-- ------- ---- ------- --------- -----
+select 100+5;
+-- select is like print in python
+select 10>5;
+-- true boolean value is 1 and false is translated into 0
+-- it helps counting how many of the are true and false
+
+select null;
+-- no value for that: it could mean we don't know or is meaningless or not applicaple
+select null>10; 
+-- ypu will just get null
+select count(100);
+-- it counts the number of outputters
+select count(null);
+-- it gives 0
+
+select * from bank.order;
+select distinct k_symbol from bank.order;
+select * from bank.order where k_symbol is null;
+-- there is a difference between null and empty rows
+SELECT ISNULL(k_symbol) FROM bank.order;
+-- this means no, false it's not in table if you run it
+
+SELECT *
+FROM bank.account
+WHERE frequency IN ('POPLATEK MESICNE','POPLATEK TYDNE');
+
+SELECT *
+FROM bank.account
+WHERE district_id BETWEEN 1 AND 50
+ORDER BY district_id ASC;
+
+
+SELECT *
+FROM bank.district
+WHERE A3 LIKE 'north%';
+-- north like, '%_orth%'
+
+-- 2.06  activity 1
+-- 1
+select distinct type from bank.card;
+-- 2
+select trans_id, date  from bank.trans
+where right(date,4) < 0116 AND left(date,2)<94 ;
+-- 2
+select * from bank.trans
+where date between 93010 and 930115;
+
+
+select * from bank.loan;
+select avg(amount) from bank.loan 
+where status = 'd';
+select status, avg(amount) from bank.loan 
+group by status 
+order by status asc;
+
+select k_symbol, avg(amount) as average from bank.order
+where k_symbol <> ' ' 
+group by k_symbol
+order by average asc;
+
+select k_symbol, bank_to, avg(amount) as average from bank.order
+where k_symbol <> ' ' 
+group by k_symbol, bank_to
+order by k_symbol, bank_to asc;
+-- group by is a powerful tool for data 
+-- NOT=, != , <>, all not equal to
+
+select k_symbol, bank_to, avg(amount) as average from bank.order
+where k_symbol <> ' ' AND avg(amount) < 3000
+group by k_symbol, bank_to
+order by k_symbol, bank_to asc;
+
+-- AND avg(amount) < 3000: where affecrts the columns selected so this above does not work
+-- where acts on columns
+select k_symbol, bank_to, avg(amount) as average from bank.order
+where k_symbol <> ' '
+group by k_symbol, bank_to
+having average > 3000
+order by k_symbol, bank_to asc;
+-- having here: to select which avg to show. they act on differnt levels.
+-- to impose a condition on those aggregates, output we use having 
+
+select *, avg(amount) over (partition by status)
+from bank.loan;
+
+-- activity 
+
+-- all of the rows that have status a after that we, avergae for that status b
+-- partition by status: what avg over, it's a differentb use case
